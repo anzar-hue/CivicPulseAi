@@ -8,12 +8,8 @@ WORKDIR /app
 COPY . .
 
 # Install dependencies
-RUN pip install --no-cache-dir \
-    flask \
-    flask-cors \
-    openai \
-    pydantic \
-    python-dotenv
+RUN pip install --no-cache-dir -r requirements,txt
+
 
 # Expose port (IMPORTANT for HF Spaces)
 EXPOSE 7860
