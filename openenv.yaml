@@ -1,0 +1,254 @@
+# OpenEnv Specification — Civic Grievance Decision Environment
+# Version: 1.0
+
+name: CivicGrievanceEnv
+version: "1.0"
+
+description: >
+  AI-powered grievance routing and decision-support environment for Indian municipalities.
+  Accepts messy real-world complaints covering sanitation, electricity, and infrastructure.
+  Applies rule-based reasoning augmented by LLM assistance to produce structured routing
+  decisions with deterministic reward evaluation.
+
+# ---------------------------------------------------------------------------
+# Entry Points
+# ---------------------------------------------------------------------------
+
+entry_points:
+  environment: environment.py
+  inference: inference.py
+  environment_class: GrievanceEnvironment
+  inference_main: "python inference.py"
+
+# ---------------------------------------------------------------------------
+# Metadata
+# ---------------------------------------------------------------------------
+
+metadata:
+  domain: civic_grievance
+  language: ["en", "hi"]
+  geography: India
+  step_type: single_step
+  evaluation_mode: deterministic
+  multi_issue: true
+  max_issue_units: 4
+
+# ---------------------------------------------------------------------------
+# Interface
+# ---------------------------------------------------------------------------
+
+interface:
+  methods:
+    reset:
+      signature: "reset(complaint: str, task_id: Optional[str]) -> Observation"
+
+    step:
+      signature: "step(action: Action) -> (Observation, RewardResult, bool, dict)"
+
+    state:
+      signature: "state() -> dict"
+
+    build_rule_based_action:
+      signature: "build_rule_based_action(observation: Observation) -> Action"
+
+  observation_fields:
+    raw_text: string
+    processed_text: string
+
+    possible_sets:
+      type: list
+      values: [sanitation, electricity, infrastructure]
+
+    extracted_signals:
+      keywords: list
+      hazard_clues: list
+      ownership_clues: list
+      domain_clues: list
+      urgency_level: ["low", "medium", "high"]
+      scale_clues: list
+      legal_clues: list
+
+    location:
+      type: string
+      required: false
+
+    image_tags:
+      type: list
+      required: false
+
+    memory_hits:
+      type: list
+
+# ---------------------------------------------------------------------------
+# Action Schema
+# ---------------------------------------------------------------------------
+
+action_fields:
+  issue_units:
+    type: list
+    max_items: 4
+
+    item_fields:
+      set: [sanitation, electricity, infrastructure]
+      subtype: string
+      root_cause: string
+      visible_symptom: string
+      public_private: [public, private, disputed, unclear]
+      urgency: [low, medium, high]
+      confidence_band: [low, medium, high]
+
+      authority_type:
+        - government
+        - local_private_solution
+        - government_appeal
+        - guidance_only
+        - insufficient_information
+
+      authority_name: string
+      reasoning: string
+      clarification_needed: boolean
+      clarification_question: string
+
+  overall_priority_order: list
+  manual_review_recommended: boolean
+  insufficient_information: boolean
+  disclaimer_needed: boolean
+
+# ---------------------------------------------------------------------------
+# Reward Rules
+# ---------------------------------------------------------------------------
+
+reward:
+  type: discrete
+  possible_values: [0.0, 0.3, 0.5, 1.0]
+
+  rules:
+    - condition: "correct set AND correct authority_type"
+      score: 1.0
+
+    - condition: "correct set BUT wrong authority_type"
+      score: 0.5
+
+    - condition: "insufficient_information OR manual_review"
+      score: 0.3
+
+    - condition: "incorrect routing"
+      score: 0.0
+
+# ---------------------------------------------------------------------------
+# Tasks
+# ---------------------------------------------------------------------------
+
+tasks:
+
+  easy:
+    id: easy_001
+    difficulty: easy
+    complaint: >
+      The street drain near ward 5 is completely blocked and overflowing.
+
+    expected_output:
+      set: sanitation
+      subtype: drainage_blockage
+      authority_type: government
+      authority_name: "Municipal Corporation"
+      urgency: medium
+      public_private: public
+
+  medium:
+    id: medium_001
+    difficulty: medium
+    complaint: >
+      Electricity has been cut for 2 days and the drain in front is overflowing.
+
+    expected_output:
+      sets: [electricity, sanitation]
+      authority_names: ["MPPB", "Municipal Corporation"]
+      urgency: medium
+
+  hard:
+    id: hard_001
+    difficulty: hard
+    complaint: >
+      Illegal construction on a public pathway and municipality is not responding.
+
+    expected_output:
+      set: infrastructure
+      subtype: illegal_construction
+      authority_type: guidance_only
+      public_private: disputed
+
+# ---------------------------------------------------------------------------
+# Domain Routing Map
+# ---------------------------------------------------------------------------
+
+domain_routing:
+
+  sanitation:
+    subtypes:
+      - drainage_blockage
+      - sewage_overflow
+      - garbage_collection
+      - water_supply
+      - water_contamination
+
+    authorities:
+      public: "Municipal Corporation"
+      water_supply: "Water Supply Department"
+      contamination: "Pollution Control Board"
+      private: "Licensed Plumber"
+
+  electricity:
+    subtypes:
+      - power_outage
+      - transformer_fault
+      - voltage_fluctuation
+      - billing_dispute
+      - electricity_theft
+      - internal_wiring
+
+    authorities:
+      outage: "MPPB"
+      billing: "MPPB Billing Unit"
+      theft: "MPPB Enforcement"
+      private: "Qualified Electrician"
+
+  infrastructure:
+    subtypes:
+      - road_damage
+      - bridge_damage
+      - footpath_obstruction
+      - illegal_construction
+
+    authorities:
+      road: "Public Works Department (PWD)"
+      illegal: "Town Planning Department"
+      legal: "Legal Aid / Town Planning"
+
+# ---------------------------------------------------------------------------
+# Design Notes
+# ---------------------------------------------------------------------------
+
+design_notes:
+  pipeline: >
+    preprocessing → signal extraction → domain detection →
+    issue generation → deduplication → precedent matching →
+    routing → reward
+
+  multi_issue: >
+    Supports up to 4 issue units.
+
+  clarification: >
+    Triggered only on ambiguity.
+
+  guidance: >
+    System assists routing, not legal resolution.
+
+# ---------------------------------------------------------------------------
+# Dependencies
+# ---------------------------------------------------------------------------
+
+dependencies:
+  python: ">=3.9"
+  pydantic: ">=2.0.0"
+  openai: ">=1.0.0"
