@@ -1,3 +1,17 @@
+---
+title: CivicPulseAi
+emoji: 🏛️
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+---
+
+
+
+
+
+
 # CivicPulse AI – OpenEnv Civic Grievance Decision Environment
 ## 🐳 Running with Docker
 
