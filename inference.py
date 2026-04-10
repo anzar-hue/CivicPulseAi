@@ -418,8 +418,8 @@ def main() -> None:
         # ── Step environment ─────────────────────────────────────────────────
         _, reward_result, done, info = env.step(action)
         step_count = info.get("step_count", 1)
-        score = reward_result.score
-        rewards.append(score)
+        raw_score = float(reward_result.score)
+        score = max(0.01, min(0.99, raw_score))
 
         # ── Output ────────────────────────────────────────────────────────────
         print_step(step_count, action, score, done, error_msg)

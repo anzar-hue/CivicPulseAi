@@ -830,14 +830,14 @@ class GrievanceEnvironment:
         """Discrete reward computation."""
         if self._current_task is None:
          return RewardResult(
-        score=0.0,
+        score=0.1,
         breakdown={},
         feedback="No task loaded - cannot evaluate reward.",
     )
 
         if self._current_task not in TASKS:
          return RewardResult(
-          score=0.0,
+          score=0.1,
           breakdown={},
           feedback=f"Unknown task: {self._current_task}",
          )
@@ -848,7 +848,7 @@ class GrievanceEnvironment:
 
         if self._current_task == "easy":
             if not action.issue_units:
-                return RewardResult(score=0.0, breakdown={}, feedback="No issue units produced.")
+                return RewardResult(score=0.1, breakdown={}, feedback="No issue units produced.")
             unit = action.issue_units[0]
             set_correct = unit.set == task["expected_set"]
             auth_correct = unit.authority_type == task["expected_authority_type"]
@@ -856,69 +856,70 @@ class GrievanceEnvironment:
             if set_correct and auth_correct:
                 breakdown["set_match"] = 0.5
                 breakdown["authority_match"] = 0.5
-                score = 1.0
+                score = 0.9
                 feedback = "Correct domain and authority."
             elif set_correct:
                 breakdown["set_match"] = 0.5
-                breakdown["authority_mismatch"] = 0.0
-                score = 0.5
+                breakdown["authority_mismatch"] = 0.1
+                score = 0.6
                 feedback = "Correct domain but wrong authority."
             elif action.insufficient_information:
                 score = 0.3
                 feedback = "Escalated to unknown — partial credit."
                 breakdown["escalation"] = 0.3
             else:
-                score = 0.0
+                score = 0.1
                 feedback = "Incorrect domain and authority."
-                breakdown["incorrect"] = 0.0
+                breakdown["incorrect"] = 0.1
 
         elif self._current_task == "medium":
             expected_sets = set(task.get("expected_sets", []))
             found_sets = {u.set for u in action.issue_units}
             overlap = found_sets & expected_sets
             if len(overlap) == len(expected_sets):
-                score = 1.0
+                score = 0.9
                 feedback = "All domains correctly identified."
-                breakdown["domain_coverage"] = 1.0
+                breakdown["domain_coverage"] = 0.9
             elif overlap:
-                score = 0.5
+                score = 0.6
                 feedback = f"Partially correct — identified {overlap}."
-                breakdown["partial_domain"] = 0.5
+                breakdown["partial_domain"] = 0.6
             else:
-                score = 0.0
+                score = 0.1
                 feedback = "No correct domains identified."
-                breakdown["incorrect"] = 0.0
+                breakdown["incorrect"] = 0.1
 
         elif self._current_task == "hard":
             if not action.issue_units:
-                return RewardResult(score=0.0, breakdown={}, feedback="No issue units produced.")
+                return RewardResult(score=0.1, breakdown={}, feedback="No issue units produced.")
             unit = action.issue_units[0]
             set_correct = unit.set == task["expected_set"]
             auth_correct = unit.authority_type == task["expected_authority_type"]
 
             if set_correct and auth_correct:
-                score = 1.0
-                breakdown["set_match"] = 0.5
-                breakdown["guidance_only_correct"] = 0.5
+                score = 0.9
+                breakdown["set_match"] = 0.6
+                breakdown["guidance_only_correct"] = 0.6
                 feedback = "Correctly identified legal case requiring guidance_only."
             elif set_correct:
-                score = 0.5
-                breakdown["set_match"] = 0.5
+                score = 0.6
+                breakdown["set_match"] = 0.6
                 feedback = "Correct domain but wrong authority type for legal case."
             elif action.insufficient_information or action.manual_review_recommended:
                 score = 0.3
                 breakdown["escalation"] = 0.3
                 feedback = "Escalated — partial credit."
             else:
-                score = 0.0
-                breakdown["incorrect"] = 0.0
+                score = 0.1
+                breakdown["incorrect"] = 0.1
                 feedback = "Incorrect handling of ambiguous legal case."
 
         else:
-            score = 0.0
+            score = 0.1
             feedback = "Unknown task."
             breakdown = {}
 
+        score = max(0.1, min(0.99, score))
         return RewardResult(score=score, breakdown=breakdown, feedback=feedback)
 
     @staticmethod
