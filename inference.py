@@ -32,13 +32,12 @@ API_BASE_URL: str = os.getenv("API_BASE_URL") or "https://router.huggingface.co/
 MODEL_NAME: str = os.getenv("MODEL_NAME") or "openai/gpt-oss-20b"
 HF_TOKEN: str = os.getenv("HF_TOKEN") or os.getenv("API_KEY") or ""
 
-if not HF_TOKEN:
-    print("[ERROR] No API key found. Set HF_TOKEN or API_KEY.")
-    sys.exit(1)
-client = OpenAI(
+client: Optional[OpenAI] = None
+if HF_TOKEN:
+ client = OpenAI(
     api_key=HF_TOKEN,
     base_url=API_BASE_URL,
-)
+ )
 
 BENCHMARK_NAME = "CivicGrievanceEnv"
 
@@ -240,6 +239,7 @@ def call_llm(observation: Observation) -> str:
     Send the observation to the LLM and return raw response string.
     Raises on API failure — caller handles fallback.
     """
+    if client is None: raise RuntimeError("No HF_TOKEN/API_KEY configured")
     user_message = (
         f"COMPLAINT:\n{observation.raw_text}\n\n"
         f"PROCESSED TEXT:\n{observation.processed_text}\n\n"
@@ -306,7 +306,8 @@ def print_end(success: bool, steps: int, score: float, rewards: List[float]) -> 
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
     print(
         f"[END] success={fmt_bool(success)} steps={steps} "
-        f"score={score:.2f} rewards={rewards_str}"
+        f"score={score:.2f} rewards={rewards_str}",
+        flush=True 
     )
 
 
@@ -373,21 +374,8 @@ def main() -> None:
         default_complaint = "There are large potholes on the road near my colony."
         default_task = "easy"
 
-        try:
-          complaint = input("Enter complaint text: ").strip()
-        except EOFError:
-          complaint = default_complaint
-
-        if not complaint:
-          complaint = default_complaint
-
-        try:
-          task_input = input(
-            "Task ID for evaluation [easy / medium / hard] or Enter to skip: "
-            ).strip()
-        except EOFError:
-          task_input = default_task
-
+        complaint = os.getenv("OPENENV_COMPLAINT", default_complaint).strip() or default_complaint
+        task_input = os.getenv("OPENENV_TASK_ID", default_task).strip() or default_task
         task_id = task_input if task_input in TASKS else default_task
         # ── Initialise environment ───────────────────────────────────────────
         env = GrievanceEnvironment()
@@ -413,19 +401,20 @@ def main() -> None:
         if action is None:
             action = GrievanceEnvironment.build_rule_based_action(observation)
         
-        # Clarification loop
-        for unit in action.issue_units:
-            if unit.clarification_needed and unit.clarification_question.strip():
-                print()
-                print("[CLARIFICATION NEEDED]")
-                print(unit.clarification_question)
-                user_reply = input("Reply: ").strip()
-                print()
+        # Clarification loop is commented for automated evaluation.
+        # Validator runs should not wait for interactive user replies.
+        #for unit in action.issue_units:
+         #   if unit.clarification_needed and unit.clarification_question.strip():
+          #      print()
+           #     print("[CLARIFICATION NEEDED]")
+            #    print(unit.clarification_question)
+             #   user_reply = input("Reply: ").strip()
+              #  print()
 
-                updated_text = observation.raw_text + " " + user_reply
-                observation = env.reset(updated_text, task_id=task_id or None)
-                action = GrievanceEnvironment.build_rule_based_action(observation)
-                break
+               # updated_text = observation.raw_text + " " + user_reply
+                #observation = env.reset(updated_text, task_id=task_id or None)
+                #action = GrievanceEnvironment.build_rule_based_action(observation)
+                #break
         # ── Step environment ─────────────────────────────────────────────────
         _, reward_result, done, info = env.step(action)
         step_count = info.get("step_count", 1)
