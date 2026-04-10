@@ -357,41 +357,26 @@ def print_routing_detail(action: Action, reward_score: float, feedback: str) -> 
 # Main Flow
 # ---------------------------------------------------------------------------
 
-def main() -> None:
+def run_single_task(task_id: str, complaint: str) -> None:
     rewards: List[float] = []
     step_count = 0
-    score = 0.0
+    score = 0.1
     success = False
-    task_id: Optional[str] = None
     action: Optional[Action] = None
     error_msg: Optional[str] = None
-    observation: Optional[Observation] = None
 
     try:
-        # ── Gather inputs ────────────────────────────────────────────────────
-        print()
-
-        default_complaint = "There are large potholes on the road near my colony."
-        default_task = "easy"
-
-        complaint = os.getenv("OPENENV_COMPLAINT", default_complaint).strip() or default_complaint
-        task_input = os.getenv("OPENENV_TASK_ID", default_task).strip() or default_task
-        task_id = task_input if task_input in TASKS else default_task
-        # ── Initialise environment ───────────────────────────────────────────
         env = GrievanceEnvironment()
         observation = env.reset(complaint, task_id=task_id)
 
-        print_start(task_id or "custom")
+        print_start(task_id)
 
-        # ── Call LLM ─────────────────────────────────────────────────────────
         raw_llm = ""
         try:
             raw_llm = call_llm(observation)
         except Exception as exc:
             error_msg = f"LLM error: {type(exc).__name__}"
-            print(f"  [WARNING] {error_msg} — falling back to rule-based action.")
 
-        # ── Parse and build Action ────────────────────────────────────────────
         if raw_llm:
             parsed = safe_parse_json(raw_llm)
             action = build_action_from_dict(parsed)
@@ -400,47 +385,49 @@ def main() -> None:
 
         if action is None:
             action = GrievanceEnvironment.build_rule_based_action(observation)
-        
-        # Clarification loop is commented for automated evaluation.
-        # Validator runs should not wait for interactive user replies.
-        #for unit in action.issue_units:
-         #   if unit.clarification_needed and unit.clarification_question.strip():
-          #      print()
-           #     print("[CLARIFICATION NEEDED]")
-            #    print(unit.clarification_question)
-             #   user_reply = input("Reply: ").strip()
-              #  print()
 
-               # updated_text = observation.raw_text + " " + user_reply
-                #observation = env.reset(updated_text, task_id=task_id or None)
-                #action = GrievanceEnvironment.build_rule_based_action(observation)
-                #break
-        # ── Step environment ─────────────────────────────────────────────────
+        # No interactive clarification in automated evaluation
+
         _, reward_result, done, info = env.step(action)
         step_count = info.get("step_count", 1)
-        raw_score = float(reward_result.score)
-        score = max(0.01, min(0.99, raw_score))
 
-        # ── Output ────────────────────────────────────────────────────────────
+        raw_score = float(reward_result.score)
+        score = max(0.1, min(0.9, raw_score))
+        rewards.append(score)
+
         print_step(step_count, action, score, done, error_msg)
-        print_routing_detail(action, reward_result.score, reward_result.feedback)
+        print_routing_detail(action, score, reward_result.feedback)
 
         success = True
 
-    except KeyboardInterrupt:
-        print("\n[Interrupted]")
-        error_msg = "interrupted"
-
     except Exception as exc:
         error_msg = f"{type(exc).__name__}: {exc}"
-        print(f"\n[ERROR] {error_msg}")
-        traceback.print_exc()
+
+        fallback_action = Action(
+            issue_units=[],
+            overall_priority_order=[],
+            manual_review_recommended=True,
+            insufficient_information=True,
+            disclaimer_needed=False,
+        )
+
+        step_count = 1
+        score = 0.1
+        rewards = [score]
+
+        print_step(step_count, fallback_action, score, True, error_msg)
 
     finally:
-        # Always emit [END]
-        print_end(success, step_count, score, rewards)
+        print_end(success, step_count or 1, score, rewards)
+
+
+def main() -> None:
+    task_order = ["easy", "medium", "hard"]
+
+    for task_id in task_order:
+        complaint = TASKS[task_id]["complaint"]
+        run_single_task(task_id, complaint)
 
 
 if __name__ == "__main__":
     main()
-    
