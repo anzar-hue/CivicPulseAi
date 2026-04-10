@@ -283,7 +283,7 @@ def fmt_action_summary(action: Action) -> str:
 
 
 def print_start(task_id: str) -> None:
-    print(f"[START] task={task_id} env={BENCHMARK_NAME} model={MODEL_NAME}")
+    print(f"[START] task={task_id} env={BENCHMARK_NAME} model={MODEL_NAME}", flush=True)
 
 
 def print_step(
@@ -297,7 +297,8 @@ def print_step(
     error_str = error if error else "null"
     print(
         f"[STEP] step={step} action={action_str} "
-        f"reward={reward:.2f} done={fmt_bool(done)} error={error_str}"
+        f"reward={reward:.2f} done={fmt_bool(done)} error={error_str}",
+        flush=True
     )
 
 
@@ -368,16 +369,26 @@ def main() -> None:
     try:
         # ── Gather inputs ────────────────────────────────────────────────────
         print()
-        complaint = input("Enter complaint text: ").strip()
+
+        default_complaint = "There are large potholes on the road near my colony."
+        default_task = "easy"
+
+        try:
+          complaint = input("Enter complaint text: ").strip()
+        except EOFError:
+          complaint = default_complaint
+
         if not complaint:
-            print("No complaint provided. Exiting.")
-            sys.exit(0)
+          complaint = default_complaint
 
-        task_input = input(
+        try:
+          task_input = input(
             "Task ID for evaluation [easy / medium / hard] or Enter to skip: "
-        ).strip()
-        task_id = task_input if task_input in TASKS else None
+            ).strip()
+        except EOFError:
+          task_input = default_task
 
+        task_id = task_input if task_input in TASKS else default_task
         # ── Initialise environment ───────────────────────────────────────────
         env = GrievanceEnvironment()
         observation = env.reset(complaint, task_id=task_id)
