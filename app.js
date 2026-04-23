@@ -1,6 +1,22 @@
 const API_URL = "/analyze";
 console.log("JS LOADED");
 console.log("API URL NOW =", API_URL)
+let currentLanguage = "en";
+
+const translations = {
+    en: {
+        welcome: "Welcome to the Civic Grievance AI Portal.",
+        inputPlaceholder: "Type your complaint here..."
+    },
+    hi: {
+        welcome: "सिविक शिकायत पोर्टल में आपका स्वागत है।",
+        inputPlaceholder: "अपनी शिकायत यहाँ लिखें..."
+    },
+    kn: {
+        welcome: "ನಾಗರಿಕ ದೂರು ಪೋರ್ಟಲ್‌ಗೆ ಸ್ವಾಗತ.",
+        inputPlaceholder: "ನಿಮ್ಮ ದೂರು ಇಲ್ಲಿ ಬರೆಯಿರಿ..."
+    }
+};
 const chatMessages = document.getElementById("chatMessages");
 const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
@@ -10,6 +26,19 @@ const choiceButtons = document.querySelectorAll(".choice-btn[data-example]");
 const sendBtn = document.getElementById("sendBtn");
 const typingIndicator = document.getElementById("typingIndicator");
 
+function setLanguage(lang) {
+    currentLanguage = lang;
+
+    // Update input placeholder
+    document.getElementById("chatInput").placeholder =
+        translations[lang].inputPlaceholder;
+
+    // Replace first bot message
+    const firstBot = document.querySelector(".message.bot .message-content");
+    if (firstBot) {
+        firstBot.innerText = translations[lang].welcome;
+    }
+}
 let pendingClarification = false;
 let currentComplaint = "";
 
@@ -167,8 +196,9 @@ chatForm.addEventListener("submit", async (e) => {
             payload = {
              complaint: currentComplaint,
              clarification: text,
-             task_id: "demo-task"
-          };
+             task_id: "demo-task",
+             language: currentlanguage 
+        };
         } else {
            currentComplaint = text;
            payload = {

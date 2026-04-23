@@ -201,7 +201,7 @@ def build_action_from_dict(data: Dict[str, Any]) -> Optional[Action]:
         return None
 
 
-def call_llm(observation) -> str:
+def call_llm(observation, language) -> str:
     """Call LLM if token exists. Raise RuntimeError when unavailable."""
     if not HF_TOKEN:
         raise RuntimeError("No HF_TOKEN/API_KEY configured")
@@ -209,6 +209,7 @@ def call_llm(observation) -> str:
     client = OpenAI(api_key=HF_TOKEN, base_url=API_BASE_URL)
 
     user_message = (
+        f"LANGUAGE: {language}\n\n"
         f"COMPLAINT:\n{observation.raw_text}\n\n"
         f"PROCESSED TEXT:\n{observation.processed_text}\n\n"
         f"DETECTED DOMAINS: {observation.possible_sets}\n"
@@ -331,6 +332,7 @@ def reset_env():
     global CURRENT_ENV, CURRENT_OBS
 
     data = request.get_json(silent=True) or {}
+    language = data.get("language", "en")
     complaint = str(data.get("complaint", "")).strip()
     task_id = str(data.get("task_id", "")).strip() or None
 
@@ -352,6 +354,7 @@ def step_env():
     global CURRENT_ENV
 
     data = request.get_json(silent=True) or {}
+    language = data.get("language", "en")
     action_data = data.get("action", {}) or {}
 
     action = Action(**action_data)
@@ -378,6 +381,7 @@ def analyze() -> Any:
     print("ANALYZE HIT FROM:",__file__)
     
     payload = request.get_json(silent=True) or {}
+    language = payload.get("language", "en")
     print("Payload:", payload)
 
     complaint = str(payload.get("complaint", "")).strip()
@@ -414,7 +418,7 @@ def analyze() -> Any:
     note: Optional[str] = None
 
     try:
-        raw = call_llm(observation)
+        raw = call_llm(observation, language)
         parsed = safe_parse_json(raw)
         action = build_action_from_dict(parsed)
         if action is None:
