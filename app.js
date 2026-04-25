@@ -290,6 +290,12 @@ function handleBotResponse(data) {
                         <strong>Next Step</strong>
                         ${escapeText(data.final_recommendation || "Please contact the relevant civic authority.")}
                     </div>
+                    <div class="recommendation-box">
+                      <strong>How to Approach the Authority</strong>
+                      <ol>
+                        ${(issue.approach_steps || []).map(step => ` <li>${escapeText(step)}</li> `).join("")}
+                      </ol>
+                    </div>
                 </div>
             `;
         });

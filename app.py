@@ -308,6 +308,113 @@ def format_issue_title(subtype: str, language: str = "en") -> str:
     selected = titles.get(language, titles["en"])
     return selected.get(subtype, subtype.replace("_", " ").title())
 
+def get_authority_guidance(authority: str, language: str = "en") -> list[str]:
+    authority_lower = (authority or "").lower()
+
+    guidance_en = {
+        "jal": [
+            "Note your exact location, ward/area name, and duration of the water issue.",
+            "Contact the local Jal Nigam or water supply office.",
+            "Submit the complaint under water supply / water contamination category.",
+            "Ask for a complaint/reference number.",
+            "Follow up if there is no response within 24–48 hours."
+        ],
+        "nagar": [
+            "Take a photo/video of the sanitation or drainage issue if possible.",
+            "Note the location, nearby landmark, and ward number.",
+            "Contact Nagar Nigam through office, helpline, or official portal.",
+            "Submit the issue under sanitation, garbage, drainage, or sewage category.",
+            "Ask for a complaint/reference number for follow-up."
+        ],
+        "mppb": [
+            "Check whether the issue is only in your house or the whole area.",
+            "Note your meter number/location if available.",
+            "Contact MPPB customer care or local electricity office.",
+            "Submit the complaint under outage, voltage, transformer, billing, or theft category.",
+            "For dangerous faults like sparks/fire, avoid touching anything and report urgently."
+        ],
+        "pwd": [
+            "Take a photo/video of the road, bridge, or footpath issue.",
+            "Note the exact location and nearby landmark.",
+            "Contact the local PWD office or civic helpline.",
+            "Submit the issue under road damage / public infrastructure category.",
+            "Ask for complaint acknowledgement and follow up if delayed."
+        ],
+        "town": [
+            "Collect basic details such as location, type of construction, and public obstruction.",
+            "Avoid direct confrontation with the person involved.",
+            "Report the issue to Town Planning Department or municipal authority.",
+            "If it involves legal ownership dispute, seek legal guidance.",
+            "Keep proof such as photos, notices, or written details."
+        ],
+        "default": [
+            "Write down the issue clearly with location and date/time.",
+            "Attach photo/video proof if available.",
+            "Contact the relevant local civic authority.",
+            "Ask for a complaint/reference number.",
+            "Follow up regularly until action is taken."
+        ]
+    }
+
+    guidance_hi = {
+        "jal": [
+            "अपना सही स्थान, वार्ड/क्षेत्र और समस्या कितने समय से है यह लिखें।",
+            "स्थानीय जल निगम या पानी सप्लाई कार्यालय से संपर्क करें।",
+            "शिकायत को पानी सप्लाई / दूषित पानी की श्रेणी में दर्ज करें।",
+            "शिकायत या रेफरेंस नंबर जरूर लें।",
+            "24–48 घंटे में जवाब न मिले तो फॉलो-अप करें।"
+        ],
+        "nagar": [
+            "संभव हो तो समस्या की फोटो या वीडियो लें।",
+            "स्थान, नजदीकी पहचान और वार्ड नंबर लिखें।",
+            "नागर निगम कार्यालय, हेल्पलाइन या पोर्टल से संपर्क करें।",
+            "शिकायत को स्वच्छता, कचरा, नाली या सीवेज श्रेणी में दर्ज करें।",
+            "फॉलो-अप के लिए शिकायत नंबर जरूर लें।"
+        ],
+        "mppb": [
+            "पहले देखें समस्या सिर्फ घर में है या पूरे क्षेत्र में।",
+            "यदि उपलब्ध हो तो मीटर नंबर या स्थान लिखें।",
+            "MPPB ग्राहक सेवा या स्थानीय बिजली कार्यालय से संपर्क करें।",
+            "शिकायत को बिजली कटौती, वोल्टेज, ट्रांसफॉर्मर या बिलिंग श्रेणी में दर्ज करें।",
+            "स्पार्क/आग जैसी खतरनाक स्थिति में कुछ न छुएं और तुरंत रिपोर्ट करें।"
+        ],
+        "pwd": [
+            "सड़क, पुल या फुटपाथ की समस्या की फोटो/वीडियो लें।",
+            "सही स्थान और नजदीकी पहचान लिखें।",
+            "स्थानीय PWD कार्यालय या नागरिक हेल्पलाइन से संपर्क करें।",
+            "शिकायत को सड़क क्षति / सार्वजनिक ढांचा श्रेणी में दर्ज करें।",
+            "शिकायत की पावती लें और देरी होने पर फॉलो-अप करें।"
+        ],
+        "town": [
+            "स्थान, निर्माण का प्रकार और सार्वजनिक बाधा की जानकारी लिखें।",
+            "संबंधित व्यक्ति से सीधे टकराव से बचें।",
+            "टाउन प्लानिंग विभाग या नगर निगम को रिपोर्ट करें।",
+            "कानूनी विवाद होने पर कानूनी सलाह लें।",
+            "फोटो, नोटिस या लिखित जानकारी जैसे प्रमाण रखें।"
+        ],
+        "default": [
+            "समस्या को स्थान और समय के साथ साफ़ लिखें।",
+            "यदि संभव हो तो फोटो/वीडियो प्रमाण जोड़ें।",
+            "संबंधित स्थानीय विभाग से संपर्क करें।",
+            "शिकायत या रेफरेंस नंबर लें।",
+            "समाधान तक नियमित फॉलो-अप करें।"
+        ]
+    }
+
+    guidance = guidance_hi if language == "hi" else guidance_en
+
+    if "jal" in authority_lower:
+        return guidance["jal"]
+    if "nagar" in authority_lower or "municipal" in authority_lower:
+        return guidance["nagar"]
+    if "mppb" in authority_lower or "electric" in authority_lower:
+        return guidance["mppb"]
+    if "pwd" in authority_lower:
+        return guidance["pwd"]
+    if "town" in authority_lower or "planning" in authority_lower or "legal" in authority_lower:
+        return guidance["town"]
+
+    return guidance["default"]
 
 def to_ui_payload(action: Action, reward_result, note: Optional[str], language: str = "en") -> Dict[str, Any]:
     issues = []
@@ -345,6 +452,7 @@ def to_ui_payload(action: Action, reward_result, note: Optional[str], language: 
             "authority": unit.authority_name,
             "authority_type": unit.authority_type.replace("_", " ").title(),
             "reason": unit.root_cause or unit.reasoning or t["default_reason"],
+            "approach_steps": get_authority_guidance(unit.authority_name, language),
         })
 
         if unit.clarification_needed and unit.clarification_question.strip() and not clarification_question:
@@ -355,9 +463,11 @@ def to_ui_payload(action: Action, reward_result, note: Optional[str], language: 
         idx = action.overall_priority_order[0] if action.overall_priority_order else 0
         idx = idx if 0 <= idx < len(issues) else 0
         top_issue = issues[idx]
+        safe_title = str(top_issue.get("title", "civic issue")).lower()
+
         recommendation = t["recommend"].format(
-            authority=top_issue["authority"],
-            title=top_issue["title"].lower()
+          authority=top_issue.get("authority", "relevant civic authority"),
+          title=safe_title
         )
     elif action.insufficient_information:
         recommendation = t["clearer"]
