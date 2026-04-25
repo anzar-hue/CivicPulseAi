@@ -6,172 +6,218 @@ colorTo: indigo
 sdk: docker
 app_port: 7860
 ---
-# CivicPulse AI – OpenEnv Civic Grievance Decision Environment
-## 🐳 Running with Docker
 
-This project includes a Dockerfile so that the entire application can run without manually installing dependencies.
+# CivicPulse AI – Smart Civic Complaint Intelligence System
 
-### Build the Docker Image
+CivicPulse AI is a guided civic complaint platform that helps citizens report real-world issues without needing to understand complex government systems.
 
-docker build -t civicpulse-ai .
-### Run the Application
-docker run -p 7860:7860 civicpulse-ai
-### Open in Browser
+It accepts unstructured complaints, detects multiple issues, resolves ambiguity, assigns urgency, and maps them to the appropriate authority — acting as a digital civic desk for everyday users.
 
-Once the container is running, open:
+---
 
-http://localhost:7860
+## Problem
 
-### Environment Variables
-To use the AI features, create a `.env` file in the root directory:
+An average citizen faces civic issues daily but often does not know where or how to file a complaint.
 
-HF_TOKEN=your_api_key_here
-MODEL_NAME=openai/gpt-oss-20b
-API_BASE_URL=https://router.huggingface.co/v1
+Existing systems:
+- are fragmented and time-consuming  
+- require structured input  
+- fail to handle multiple issues in a single complaint  
 
-Note: The system will still work using rule-based logic if the API key is not provided.
-### Why Docker?
+In reality, a complaint like “road problem” may include:
+- potholes  
+- illegal construction  
+- delayed work  
 
-Docker makes it easy to run this project on any system without worrying about setup.  
-Everything (backend, frontend, dependencies) runs inside a single container.
+This gap between real-world problems and structured reporting leads to misrouting, delays, and unresolved issues.
 
-## Problem Statement
-
-Unstructured civic complaints often lead to incorrect routing, delays, 
-and unresolved issues due to unclear information, multiple problems in 
-one message, and lack of intelligent prioritization.
-This project models civic grievance handling as a structured decision
-environment where an agent must interpret complaints, ask clarification, 
-and route them correctly.
-
+---
 
 ## Solution
 
-CivicPulse AI converts raw civic complaints into structured decisions.
-It identifies issues, assigns urgency, determines ownership (public/private), 
-and routes the complaint to the correct authority. It also asks clarification 
-questions when the complaint lacks sufficient detail.
-This system is designed not just as an application, but as an environment for 
-evaluating and improving decision-making agents.
+CivicPulse AI acts as a guided gateway for civic complaints.
 
-## How to Run 
-- Run the backend: python app.py  
-- The application runs on port 7860 (frontend and backend are integrated)  
-- Open http://localhost:7860 in your browser  
+It allows users to describe problems naturally and then:
+- detects multiple issues  
+- handles ambiguity through clarification  
+- assigns urgency  
+- determines responsibility  
+- maps to the correct authority  
+- provides a clear next step  
 
-## AI System Overview
+Instead of forcing structured input, the system adapts to how users actually describe problems.
 
-The system processes complaints through multiple steps:
+---
+
+## Core Innovations
+
+- Multi-issue understanding within a single complaint  
+- Ambiguity handling through clarification questions  
+- Transparency in responsibility and authority mapping  
+
+---
+
+## How It Works
+
+1. User writes complaint in natural language  
+2. System processes input through structured pipeline  
+3. Detects multiple issues if present  
+4. Asks clarification if needed  
+5. Assigns urgency  
+6. Maps issues to relevant authority  
+7. Returns structured output with recommendation  
+
+The system functions like a digital civic desk, helping users understand and act on their complaints without navigating complex procedures.
+
+---
+
+## Example
+
+**Input:**  
+"There is water leakage and road damage near my house"
+
+**Output:**  
+- Issue 1: Water Supply Problem → Jal Nigam  
+- Issue 2: Road Damage → PWD  
+- Urgency: High  
+- Recommendation: Contact respective departments  
+
+---
+
+## System Architecture
+
+The system follows a layered architecture connecting frontend interaction with backend decision logic.
+
+- Frontend captures user complaints in natural language  
+- Backend (Flask) processes input through a structured pipeline  
+- Rule-based engine performs primary routing using mapping logic  
+- LLM (OpenAI-compatible API) acts as fallback for ambiguity and complex cases  
+
+The architecture is currently stable at a **city-level implementation**.  
+With integration into government APIs and datasets, it can scale to **state and national levels** without major changes to core logic.
+
+---
+
+## AI Processing Pipeline
+
+The system processes complaints through multiple stages:
+
 - Text preprocessing  
 - Signal extraction (keywords, urgency, legal hints)  
 - Domain classification (Sanitation, Electricity, Infrastructure)  
-- Issue detection (single or multiple)  
-- Clarification (if needed)  
+- Multi-issue detection  
+- Clarification handling  
 - Authority mapping  
 - Priority ordering  
 - Reward evaluation  
-This ensures structured and explainable decision-making instead of random chatbot responses.
 
+This ensures structured and explainable decision-making instead of generic chatbot responses.
 
-## Tools Used
+---
 
-- Python  
-- Flask (backend API)  
-- OpenEnv framework  
-- Hugging Face / OpenAI-compatible API  
-- Pydantic (typed models)  
-- HTML, CSS, JavaScript (frontend)  
+## Key Features
 
+- Multi-issue detection  
+- Ambiguity handling  
+- Urgency classification  
+- Public vs private ownership detection  
+- Authority mapping  
+- Rule-based + LLM fallback system  
+- Structured output generation  
+- Multilingual UI support (English / Hindi / Kannada)  
+
+---
 
 ## Backend (OpenEnv Environment)
 
-The backend is implemented as an OpenEnv environment with:
+The backend is implemented as an OpenEnv-based decision environment:
+
 - `reset()` → initializes complaint state  
-- `step(action)` → processes agent decision  
+- `step(action)` → processes decision and returns reward  
 - `state()` → returns current environment state  
-The environment fully follows OpenEnv specifications with typed models and deterministic evaluation.
-
-
-### OpenEnv Interaction Loop
-
-The environment follows a standard agent loop:
-- reset(complaint) → initializes the environment  
-- step(action) → evaluates the decision and returns reward  
-- state() → returns current state  
 
 Flow:  
 Observation → Action → Environment → Reward → Next Observation  
 
+This allows structured evaluation and reproducibility of decision-making logic.
 
-## Working Terminology
-
-- HF Token → Used for accessing LLM APIs  
-- LLM Fallback → Rule-based logic used when LLM fails  
-- Observation → processed complaint data  
-- Action → structured decision output  
-- Reward → score assigned to action  
-
+---
 
 ## Reward System
 
-The reward function is deterministic and provides partial credit:
+The reward function is deterministic and reflects decision quality:
+
 - 1.0 → correct domain and authority  
 - 0.5 → correct domain but incorrect authority  
-- 0.3 → safe handling of ambiguous cases (clarification / escalation)  
+- 0.3 → safe handling (clarification / escalation)  
 - 0.0 → incorrect handling  
-This reward design reflects real-world decision quality, where partially correct 
-actions are still valuable and safe handling is preferred over confident mistakes.
 
+This encourages safe and explainable decisions instead of overconfident errors.
+
+---
 
 ## Frontend
 
-The frontend simulates a real civic interaction interface where users can submit 
-complaints and receive structured decisions.
-It includes:
-- Welcome screen with system introduction  
-- Complaint category selection  
-- Chat-based interaction  
-- Structured output display (issues, urgency, authority, recommendation)  
+The frontend simulates a real civic interaction interface:
 
+- Welcome screen with introduction  
+- Slideshow of civic visuals  
+- Chat-based complaint interaction  
+- Category suggestion buttons  
+- Structured output display (issues, urgency, authority, recommendation)  
+- Complaint history tracking  
+
+---
 
 ## Learning Behaviour (Memory)
 
-The system includes a lightweight memory mechanism.
-It stores previous complaints and retrieves similar cases (`memory_hits`) to assist 
-in decision-making.
-While it does not retrain model weights internally, it provides:
-- structured observations  
-- deterministic rewards  
-- reproducible tasks  
-An external agent can use these signals to improve decision-making over time.
+The system includes a lightweight memory mechanism:
 
+- Stores previous complaints  
+- Retrieves similar cases (`memory_hits`)  
+- Assists decision-making  
+
+It does not retrain internally but provides structured signals for external agent learning.
+
+---
 
 ## Limitations
 
 - No real-time government system integration  
-- Limited to predefined domains  
-- Memory is not a full learning system  
-- LLM may fail without valid API token  
+- Authority routing is simulated  
+- Mapping layer is keyword-based (prototype stage)  
+- Multilingual output is partially implemented  
+- LLM requires API token for advanced behavior  
 
+---
 
-## Scope / Feasibility
+## Future Scope
 
-- Can integrate with government complaint systems  
-- Supports multilingual expansion  
-- Can evolve into a full complaint tracking platform  
-- Suitable for real-world civic automation 
+- Government API integration  
+- Real-time complaint tracking  
+- Authority assignment and escalation  
+- Scheme recommendation system  
+- Public data transparency (PDS, budgets, reports)  
+- Full multilingual backend support  
+- City → State → National scaling  
 
-# Future Features
+---
 
-- Ai action layer(sends emails to dept and follows up complaints)
-- More interactive
-- Broaden complaint areas
-- Image upload and Image analyzation by Ai 
+## Business Potential
 
+CivicPulse AI can operate as a collaborative platform:
 
-## Conclusion
+- Government provides verified data and authority systems  
+- Platform provides AI-driven complaint intelligence  
+- Revenue via partnerships, licensing, and minimal ads  
 
-CivicPulse AI demonstrates how real-world civic complaint handling can be transformed
-into a structured decision environment.
-It bridges rule-based reasoning and AI-assisted processing to enable reliable, 
-explainable, and scalable agent evaluation.
+It is designed as a **utility-first system**, not an ad-driven product.
+
+---
+
+## Running the Project (Docker)
+
+### Build
+
+```bash
+docker build -t civicpulse-ai .

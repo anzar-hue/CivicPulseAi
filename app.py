@@ -238,45 +238,113 @@ def call_llm(observation, language) -> str:
     return content.strip() if content else ""
 
 
-def format_issue_title(subtype: str) -> str:
-    mapping = {
-        "water_supply": "Water Supply Problem",
-        "water_contamination": "Water Contamination",
-        "drainage_blockage": "Drainage Blockage",
-        "sewage_overflow": "Sewage Overflow",
-        "garbage_collection": "Garbage Collection Issue",
-        "power_outage": "Power Outage",
-        "voltage_fluctuation": "Voltage Fluctuation",
-        "transformer_fault": "Transformer Fault",
-        "billing_dispute": "Electricity Billing Issue",
-        "electricity_theft": "Electricity Theft / Illegal Connection",
-        "internal_wiring": "Internal Wiring Issue",
-        "road_damage": "Road Damage",
-        "bridge_damage": "Bridge Damage",
-        "footpath_obstruction": "Footpath Obstruction",
-        "illegal_construction": "Illegal Construction",
-        "building_issue": "Unsafe Building Issue",
-        "general_sanitation": "Sanitation Issue",
-        "general_infrastructure": "Infrastructure Issue",
-        "general_electricity": "Electricity Issue",
+def format_issue_title(subtype: str, language: str = "en") -> str:
+    titles = {
+        "en": {
+            "water_supply": "Water Supply Problem",
+            "water_contamination": "Water Contamination",
+            "drainage_blockage": "Drainage Blockage",
+            "sewage_overflow": "Sewage Overflow",
+            "garbage_collection": "Garbage Collection Issue",
+            "power_outage": "Power Outage",
+            "voltage_fluctuation": "Voltage Fluctuation",
+            "transformer_fault": "Transformer Fault",
+            "billing_dispute": "Electricity Billing Issue",
+            "electricity_theft": "Electricity Theft / Illegal Connection",
+            "internal_wiring": "Internal Wiring Issue",
+            "road_damage": "Road Damage",
+            "bridge_damage": "Bridge Damage",
+            "footpath_obstruction": "Footpath Obstruction",
+            "illegal_construction": "Illegal Construction",
+            "building_issue": "Unsafe Building Issue",
+            "general_sanitation": "Sanitation Issue",
+            "general_infrastructure": "Infrastructure Issue",
+            "general_electricity": "Electricity Issue",
+        },
+        "hi": {
+            "water_supply": "पानी की सप्लाई की समस्या",
+            "water_contamination": "दूषित पानी की समस्या",
+            "drainage_blockage": "नाली/ड्रेनेज ब्लॉकेज",
+            "sewage_overflow": "सीवेज ओवरफ्लो",
+            "garbage_collection": "कचरा संग्रहण समस्या",
+            "power_outage": "बिजली कटौती",
+            "voltage_fluctuation": "वोल्टेज उतार-चढ़ाव",
+            "transformer_fault": "ट्रांसफॉर्मर खराबी",
+            "billing_dispute": "बिजली बिल समस्या",
+            "electricity_theft": "बिजली चोरी / अवैध कनेक्शन",
+            "internal_wiring": "घर की वायरिंग समस्या",
+            "road_damage": "सड़क क्षति / गड्ढे",
+            "bridge_damage": "पुल क्षति",
+            "footpath_obstruction": "फुटपाथ बाधा",
+            "illegal_construction": "अवैध निर्माण",
+            "building_issue": "असुरक्षित भवन समस्या",
+            "general_sanitation": "स्वच्छता समस्या",
+            "general_infrastructure": "इन्फ्रास्ट्रक्चर समस्या",
+            "general_electricity": "बिजली समस्या",
+        },
+        "kn": {
+            "water_supply": "ನೀರಿನ ಸರಬರಾಜು ಸಮಸ್ಯೆ",
+            "water_contamination": "ಕಲುಷಿತ ನೀರಿನ ಸಮಸ್ಯೆ",
+            "drainage_blockage": "ಡ್ರೆನೇಜ್ ತಡೆ",
+            "sewage_overflow": "ಮಲಿನ ನೀರಿನ ಓವರ್‌ಫ್ಲೋ",
+            "garbage_collection": "ಕಸ ಸಂಗ್ರಹಣೆ ಸಮಸ್ಯೆ",
+            "power_outage": "ವಿದ್ಯುತ್ ಕಡಿತ",
+            "voltage_fluctuation": "ವೋಲ್ಟೇಜ್ ಏರಿಳಿತ",
+            "transformer_fault": "ಟ್ರಾನ್ಸ್‌ಫಾರ್ಮರ್ ದೋಷ",
+            "billing_dispute": "ವಿದ್ಯುತ್ ಬಿಲ್ ಸಮಸ್ಯೆ",
+            "electricity_theft": "ವಿದ್ಯುತ್ ಕಳ್ಳತನ / ಅಕ್ರಮ ಸಂಪರ್ಕ",
+            "internal_wiring": "ಆಂತರಿಕ ವೈರಿಂಗ್ ಸಮಸ್ಯೆ",
+            "road_damage": "ರಸ್ತೆ ಹಾನಿ / ಗುಂಡಿಗಳು",
+            "bridge_damage": "ಸೇತುವೆ ಹಾನಿ",
+            "footpath_obstruction": "ಫುಟ್‌ಪಾತ್ ಅಡ್ಡಿ",
+            "illegal_construction": "ಅಕ್ರಮ ನಿರ್ಮಾಣ",
+            "building_issue": "ಅಸುರಕ್ಷಿತ ಕಟ್ಟಡ ಸಮಸ್ಯೆ",
+            "general_sanitation": "ಸ್ವಚ್ಛತೆ ಸಮಸ್ಯೆ",
+            "general_infrastructure": "ಮೂಲಸೌಕರ್ಯ ಸಮಸ್ಯೆ",
+            "general_electricity": "ವಿದ್ಯುತ್ ಸಮಸ್ಯೆ",
+        }
     }
-    return mapping.get(subtype, subtype.replace("_", " ").title())
+
+    selected = titles.get(language, titles["en"])
+    return selected.get(subtype, subtype.replace("_", " ").title())
 
 
-def to_ui_payload(action: Action, reward_result, note: Optional[str]) -> Dict[str, Any]:
+def to_ui_payload(action: Action, reward_result, note: Optional[str], language: str = "en") -> Dict[str, Any]:
     issues = []
     clarification_question = ""
 
+    text_pack = {
+        "en": {
+            "default_reason": "Complaint suggests a civic issue requiring attention.",
+            "recommend": "Recommended next step: contact your local {authority} office or register a complaint through the official civic helpline for the {title}.",
+            "clearer": "Please provide a clearer complaint so the system can route it correctly.",
+        },
+        "hi": {
+            "default_reason": "शिकायत से नागरिक समस्या का संकेत मिलता है जिस पर ध्यान देने की आवश्यकता है।",
+            "recommend": "सुझाया गया अगला कदम: {title} के लिए अपने स्थानीय {authority} कार्यालय से संपर्क करें या आधिकारिक नागरिक हेल्पलाइन पर शिकायत दर्ज करें।",
+            "clearer": "कृपया शिकायत को और स्पष्ट लिखें ताकि सिस्टम सही विभाग तक भेज सके।",
+        },
+        "kn": {
+            "default_reason": "ದೂರು ನಾಗರಿಕ ಸಮಸ್ಯೆಯನ್ನು ಸೂಚಿಸುತ್ತದೆ ಮತ್ತು ಗಮನ ಅಗತ್ಯವಿದೆ.",
+            "recommend": "ಮುಂದಿನ ಸಲಹೆ: {title}ಗಾಗಿ ನಿಮ್ಮ ಸ್ಥಳೀಯ {authority} ಕಚೇರಿಯನ್ನು ಸಂಪರ್ಕಿಸಿ ಅಥವಾ ಅಧಿಕೃತ ನಾಗರಿಕ ಸಹಾಯವಾಣಿಯಲ್ಲಿ ದೂರು ದಾಖಲಿಸಿ.",
+            "clearer": "ಸಿಸ್ಟಮ್ ಸರಿಯಾದ ಇಲಾಖೆಗೆ ಕಳುಹಿಸಲು ದಯವಿಟ್ಟು ದೂರನ್ನು ಇನ್ನಷ್ಟು ಸ್ಪಷ್ಟವಾಗಿ ಬರೆಯಿರಿ.",
+        }
+    }
+
+    t = text_pack.get(language, text_pack["en"])
+
     for unit in action.issue_units:
+        title = format_issue_title(unit.subtype, language),
+
         issues.append({
-            "title": format_issue_title(unit.subtype),
+            "title": title,
             "set": unit.set.title(),
             "subtype": unit.subtype,
             "urgency": unit.urgency.title(),
             "ownership": unit.public_private.title(),
             "authority": unit.authority_name,
             "authority_type": unit.authority_type.replace("_", " ").title(),
-            "reason": unit.root_cause or unit.reasoning or "Complaint suggests a civic issue requiring attention.",
+            "reason": unit.root_cause or unit.reasoning or t["default_reason"],
         })
 
         if unit.clarification_needed and unit.clarification_question.strip() and not clarification_question:
@@ -287,9 +355,12 @@ def to_ui_payload(action: Action, reward_result, note: Optional[str]) -> Dict[st
         idx = action.overall_priority_order[0] if action.overall_priority_order else 0
         idx = idx if 0 <= idx < len(issues) else 0
         top_issue = issues[idx]
-        recommendation = f"Recommended next step: contact your local {top_issue['authority']} office " f"or register a complaint through the official civic helpline for the " f"{top_issue['title'].lower()}."
+        recommendation = t["recommend"].format(
+            authority=top_issue["authority"],
+            title=top_issue["title"].lower()
+        )
     elif action.insufficient_information:
-        recommendation = "Please provide a clearer complaint so the system can route it correctly."
+        recommendation = t["clearer"]
 
     return {
         "status": "ok",
@@ -374,6 +445,7 @@ def get_state():
 
 @app.route("/analyze", methods=["POST", "OPTIONS"])
 def analyze() -> Any:
+    print("ANALYZE ENDPOINT HIT", flush=True)
     if request.method == "OPTIONS":
         response = jsonify({})
         response.status_code = 200
@@ -435,7 +507,7 @@ def analyze() -> Any:
 
     _, reward_result, _, _ = env.step(action)
 
-    payload = to_ui_payload(action, reward_result, note)
+    payload = to_ui_payload(action, reward_result, note, language)
     print("FINAL PAYLOAD:", payload)
     return jsonify(payload)
     
