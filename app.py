@@ -334,7 +334,7 @@ def to_ui_payload(action: Action, reward_result, note: Optional[str], language: 
     t = text_pack.get(language, text_pack["en"])
 
     for unit in action.issue_units:
-        title = format_issue_title(unit.subtype, language),
+        title = format_issue_title(unit.subtype, language)
 
         issues.append({
             "title": title,
